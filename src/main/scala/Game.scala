@@ -8,6 +8,8 @@ import org.lwjgl.opengl.{
 }
 import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
+import org.newdawn.slick.opengl._
+import org.newdawn.slick.util._
 import Keyboard._
 
 class Point(xc: Int, yc: Int) {
@@ -21,7 +23,7 @@ class Point(xc: Int, yc: Int) {
     x = x + dx
     y = y + dy
   }
-  override def toString(): String = "(" + x + ", " + y + ")";
+  override def toString(): String = "(" + x + ", " + y + ")"
 }
 
 object Game extends App {
@@ -31,8 +33,14 @@ object Game extends App {
   val GRID_SIZE:Int = GRID_HALF_SIZE*2
   var mouseUp:Boolean = false 
   var mouseDown:Boolean = false 
+  //Textures
+  var xTexture:Texture = null
+  var oTexture:Texture = null
   var xGrid = List[Point]()
-  xGrid :+ new Point(1, 2)
+  var oGrid = List[Point]()
+  //Add some coords
+  xGrid = xGrid :+ new Point(1, 2)
+  oGrid = oGrid :+ new Point(10, 2)
   val displayMode = new DisplayMode(SCREEN_WIDTH, SCREEN_HEIGHT)
   Display.setTitle("uWar")
   Display.setDisplayMode(displayMode)
@@ -47,6 +55,16 @@ object Game extends App {
     glLoadIdentity()
     glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, 1, -1)
     glMatrixMode(GL_MODELVIEW)
+    glEnable(GL_TEXTURE_2D)               
+        
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f)          
+        
+    // enable alpha blending
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    xTexture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("media/x.png"))
+    oTexture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("media/o.png"))
   }
 
   def drawQuad(startX:Int, startY:Int, halfWidth:Int, halfHeight:Int) {
@@ -55,6 +73,21 @@ object Game extends App {
     glVertex2f(startX+halfWidth,startY-halfHeight)
     glVertex2f(startX+halfWidth,startY+halfHeight)
     glVertex2f(startX-halfWidth,startY+halfHeight)
+    glEnd()
+  }
+
+  def drawTexturedQuad(texture:Texture, startX:Int, startY:Int, halfWidth:Int, halfHeight:Int) {
+    texture.bind()
+    
+    glBegin(GL_QUADS)
+      glTexCoord2f(0,0)
+      glVertex2f(startX-halfWidth,startY-halfHeight)
+      glTexCoord2f(1,0)
+      glVertex2f(startX+halfWidth,startY-halfHeight)
+      glTexCoord2f(1,1)
+      glVertex2f(startX+halfWidth,startY+halfHeight)
+      glTexCoord2f(0,1)
+      glVertex2f(startX-halfWidth,startY+halfHeight)
     glEnd()
   }
 
@@ -67,27 +100,20 @@ object Game extends App {
     }
   }
 
-  def drawXGrid(x:Int=0,y:Int=0) {
-    if(x*GRID_HALF_SIZE > SCREEN_WIDTH) drawGrid(0, y+1)
-    else if(y*GRID_HALF_SIZE > SCREEN_HEIGHT) return
-    else {
-      drawQuad(GRID_HALF_SIZE + x*(GRID_HALF_SIZE*2), GRID_HALF_SIZE + y*(GRID_HALF_SIZE*2), GRID_HALF_SIZE, GRID_HALF_SIZE)
-      drawGrid(x+1, y)
-    }
+  def drawX(startX:Int, startY:Int, halfWidth:Int, halfHeight:Int) {
+    drawTexturedQuad(xTexture, startX, startY, halfWidth, halfHeight)
   }
 
-  def drawX(startX:Int, startY:Int, halfWidth:Int, halfHeight:Int) {
-    glBegin(GL_LINES)
-    glVertex2f(startX-halfWidth,startY-halfHeight)
-    glVertex2f(startX+halfWidth,startY+halfHeight)
-    glVertex2f(startX+halfWidth,startY-halfHeight)
-    glVertex2f(startX-halfWidth,startY+halfHeight)
-    glEnd()
+  def drawO(startX:Int, startY:Int, halfWidth:Int, halfHeight:Int) {
+    drawTexturedQuad(oTexture, startX, startY, halfWidth, halfHeight)
   }
 
   def drawXSimple(x:Int, y:Int) {
-    println("Drawing x at (" + x + "," + y + ")")
     drawX(GRID_HALF_SIZE + x*(GRID_HALF_SIZE*2), GRID_HALF_SIZE + y*(GRID_HALF_SIZE*2), GRID_HALF_SIZE, GRID_HALF_SIZE)
+  }
+
+  def drawOSimple(x:Int, y:Int) {
+    drawO(GRID_HALF_SIZE + x*(GRID_HALF_SIZE*2), GRID_HALF_SIZE + y*(GRID_HALF_SIZE*2), GRID_HALF_SIZE, GRID_HALF_SIZE)
   }
 
   def mainLoop() {
@@ -97,13 +123,9 @@ object Game extends App {
     // set the color of the quad (R,G,B,A)
     glColor3f(0.5f,0.5f,1.0f)
 
-    //drawGrid()
-    drawXGrid()
-    //foreach(x <- xGrid) drawXGrid(x.x, x.y)
+    drawGrid()
     xGrid.foreach((elem:Point) => drawXSimple(elem.getX(), elem.getY()))
-    //drawXSimple(0,0)
-    //drawXSimple(1,1)
-    //drawXSimple(2,2)
+    oGrid.foreach((elem:Point) => drawOSimple(elem.getX(), elem.getY()))
 
     if(!Mouse.isButtonDown(0)) mouseUp = true
     if(Mouse.isButtonDown(0) && mouseUp) {
