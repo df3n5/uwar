@@ -176,7 +176,7 @@ object Game extends App {
     drawGrid()
     xGrid.foreach((elem:Point) => drawXSimple(elem.getX(), elem.getY()))
     oGrid.foreach((elem:Point) => drawOSimple(elem.getX(), elem.getY()))
-    font.drawString(100, 50, "You rock", Color.orange)
+    font.drawString(100, 50, "Turn: " + go, Color.orange)
 
     Display.update()
 
