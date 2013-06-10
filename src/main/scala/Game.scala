@@ -27,10 +27,17 @@ class Point(xc: Int, yc: Int) {
 }
 
 object Game extends App {
-  val SCREEN_WIDTH:Int = 640
+  object MoveType extends Enumeration {
+    type MoveType = Value
+    val X, O = Value
+  }
+  import MoveType._
+
+  val SCREEN_WIDTH:Int = 480
   val SCREEN_HEIGHT:Int = 480
-  val GRID_HALF_SIZE:Int = 16
-  val GRID_SIZE:Int = GRID_HALF_SIZE*2
+  val NTILES_X = 4
+  val TILE_HALF_LENGTH:Int = SCREEN_WIDTH / (NTILES_X*2)
+  val TILE_LENGTH:Int = TILE_HALF_LENGTH*2
   var mouseUp:Boolean = false 
   var mouseDown:Boolean = false 
   //Textures
@@ -39,8 +46,10 @@ object Game extends App {
   var xGrid = List[Point]()
   var oGrid = List[Point]()
   //Add some coords
-  xGrid = xGrid :+ new Point(1, 2)
-  oGrid = oGrid :+ new Point(10, 2)
+  //xGrid = xGrid :+ new Point(1, 2)
+  //oGrid = oGrid :+ new Point(10, 2)
+  // Who's go is it?
+  var go = X
   val displayMode = new DisplayMode(SCREEN_WIDTH, SCREEN_HEIGHT)
   Display.setTitle("uWar")
   Display.setDisplayMode(displayMode)
@@ -92,10 +101,10 @@ object Game extends App {
   }
 
   def drawGrid(x:Int=0,y:Int=0) {
-    if(x*GRID_HALF_SIZE > SCREEN_WIDTH) drawGrid(0, y+1)
-    else if(y*GRID_HALF_SIZE > SCREEN_HEIGHT) return
+    if(x*TILE_HALF_LENGTH > SCREEN_WIDTH) drawGrid(0, y+1)
+    else if(y*TILE_HALF_LENGTH > SCREEN_HEIGHT) return
     else {
-      drawQuad(GRID_HALF_SIZE + x*(GRID_HALF_SIZE*2), GRID_HALF_SIZE + y*(GRID_HALF_SIZE*2), GRID_HALF_SIZE, GRID_HALF_SIZE)
+      drawQuad(TILE_HALF_LENGTH + x*(TILE_HALF_LENGTH*2), TILE_HALF_LENGTH + y*(TILE_HALF_LENGTH*2), TILE_HALF_LENGTH, TILE_HALF_LENGTH)
       drawGrid(x+1, y)
     }
   }
@@ -109,11 +118,21 @@ object Game extends App {
   }
 
   def drawXSimple(x:Int, y:Int) {
-    drawX(GRID_HALF_SIZE + x*(GRID_HALF_SIZE*2), GRID_HALF_SIZE + y*(GRID_HALF_SIZE*2), GRID_HALF_SIZE, GRID_HALF_SIZE)
+    drawX(TILE_HALF_LENGTH + x*(TILE_HALF_LENGTH*2), TILE_HALF_LENGTH + y*(TILE_HALF_LENGTH*2), TILE_HALF_LENGTH, TILE_HALF_LENGTH)
   }
 
   def drawOSimple(x:Int, y:Int) {
-    drawO(GRID_HALF_SIZE + x*(GRID_HALF_SIZE*2), GRID_HALF_SIZE + y*(GRID_HALF_SIZE*2), GRID_HALF_SIZE, GRID_HALF_SIZE)
+    drawO(TILE_HALF_LENGTH + x*(TILE_HALF_LENGTH*2), TILE_HALF_LENGTH + y*(TILE_HALF_LENGTH*2), TILE_HALF_LENGTH, TILE_HALF_LENGTH)
+  }
+
+  def makeGo(goValue: MoveType, x:Int, y:Int) {
+    if(goValue == X) {
+      xGrid = xGrid :+ new Point(x, y)
+      go = O
+    } else {
+      oGrid = oGrid :+ new Point(x, y)
+      go = X
+    }
   }
 
   def mainLoop() {
@@ -132,10 +151,20 @@ object Game extends App {
       mouseDown = true
       mouseUp = false
       System.out.println("x is :" + Mouse.getX() + " and y is : " + Mouse.getY())
-      System.out.println("translated x is :" + Mouse.getX() / GRID_SIZE + " and y is : " + Mouse.getY()/GRID_SIZE)
-      val x = Mouse.getX() / GRID_SIZE
-      val y = Mouse.getY() / GRID_SIZE
+      System.out.println("translated x is :" + Mouse.getX() / TILE_LENGTH + " and y is : " + Mouse.getY()/TILE_LENGTH)
+      val x = Mouse.getX() / TILE_LENGTH
+      val y = Mouse.getY() / TILE_LENGTH
       //TODO: Make player's move here if it is their turn or send to server.
+      val pointInList: PartialFunction[Point, Point] = {
+        case point if point.x == x && point.y == y => point
+      }
+      val xMatches = xGrid collect pointInList
+      val oMatches = oGrid collect pointInList
+      if((xMatches.length > 0) || (oMatches.length > 0)) {
+        println("Invalid move")
+      } else {
+        makeGo(go, x, y)
+      }
     }
 
     Display.update()
