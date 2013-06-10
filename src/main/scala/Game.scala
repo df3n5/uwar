@@ -1,5 +1,7 @@
 package org.nlines 
 
+import java.awt.Font
+
 // What GL version you plan on using
 import org.lwjgl.opengl.GL11._
 import org.lwjgl.opengl.{
@@ -10,6 +12,8 @@ import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
 import org.newdawn.slick.opengl._
 import org.newdawn.slick.util._
+import org.newdawn.slick.TrueTypeFont
+import org.newdawn.slick.Color
 import Keyboard._
 
 class Point(xc: Int, yc: Int) {
@@ -40,6 +44,8 @@ object Game extends App {
   val TILE_LENGTH:Int = TILE_HALF_LENGTH*2
   var mouseUp:Boolean = false 
   var mouseDown:Boolean = false 
+  //Font
+  var font:TrueTypeFont = null
   //Textures
   var xTexture:Texture = null
   var oTexture:Texture = null
@@ -62,7 +68,7 @@ object Game extends App {
     // init OpenGL
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, 1, -1)
+    glOrtho(0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, -1)
     glMatrixMode(GL_MODELVIEW)
     glEnable(GL_TEXTURE_2D)               
         
@@ -74,6 +80,10 @@ object Game extends App {
 
     xTexture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("media/x.png"))
     oTexture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("media/o.png"))
+
+    //Fonts
+    var awtFont:Font = new Font("Times New Roman", Font.BOLD, 24)
+    font = new TrueTypeFont(awtFont, false)
   }
 
   def drawQuad(startX:Int, startY:Int, halfWidth:Int, halfHeight:Int) {
@@ -142,10 +152,6 @@ object Game extends App {
     // set the color of the quad (R,G,B,A)
     glColor3f(0.5f,0.5f,1.0f)
 
-    drawGrid()
-    xGrid.foreach((elem:Point) => drawXSimple(elem.getX(), elem.getY()))
-    oGrid.foreach((elem:Point) => drawOSimple(elem.getX(), elem.getY()))
-
     if(!Mouse.isButtonDown(0)) mouseUp = true
     if(Mouse.isButtonDown(0) && mouseUp) {
       mouseDown = true
@@ -153,7 +159,7 @@ object Game extends App {
       System.out.println("x is :" + Mouse.getX() + " and y is : " + Mouse.getY())
       System.out.println("translated x is :" + Mouse.getX() / TILE_LENGTH + " and y is : " + Mouse.getY()/TILE_LENGTH)
       val x = Mouse.getX() / TILE_LENGTH
-      val y = Mouse.getY() / TILE_LENGTH
+      val y = (NTILES_X-1) - (Mouse.getY() / TILE_LENGTH)
       //TODO: Make player's move here if it is their turn or send to server.
       val pointInList: PartialFunction[Point, Point] = {
         case point if point.x == x && point.y == y => point
@@ -166,6 +172,11 @@ object Game extends App {
         makeGo(go, x, y)
       }
     }
+
+    drawGrid()
+    xGrid.foreach((elem:Point) => drawXSimple(elem.getX(), elem.getY()))
+    oGrid.foreach((elem:Point) => drawOSimple(elem.getX(), elem.getY()))
+    font.drawString(100, 50, "You rock", Color.orange)
 
     Display.update()
 
