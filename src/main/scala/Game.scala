@@ -254,6 +254,7 @@ object Game extends App {
     font.drawString(000, 500, go + "\'s turn", Color.yellow)
     font.drawString(000, 550, "R's score: " + scoreX, Color.white)
     font.drawString(250, 550, "O's score: " + scoreO, Color.white)
+    font.drawString(250, 500, "uWar", Color.red)
 
     Display.update()
 
